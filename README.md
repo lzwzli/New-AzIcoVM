@@ -30,7 +30,7 @@ Before running this Cmdlet, ensure you have the following information:
     - If there are VMs in the Resource Group with the same Prefix name, then the index will be the count of VMs with the same Prefix name + 1. Otherwise, it will start at 1.  
 - **ICONICS Suite version**
 - **User Name** of the initial administrator account.  
-- **Password** that is meets the following requirements:  
+- **Password** that meets the following requirements:  
     - At least 12 characters long.
     - Have one or more lower case alphabets.  
     - Have one or more upper case alphabets.  
@@ -39,6 +39,8 @@ Before running this Cmdlet, ensure you have the following information:
 - If a new resource group is being created, you will be asked if you want to allow:  
     - **HTTP** inbound using TCP port 80  
     - **ICONICS FrameWorX** inbound using TCP port 8778  
+    
+    *Note that this only opens the ports at the Azure NSG level. The respective ports still need to be allowed in the VM's Windows Firewall.*
 
 ## Using the Cmdlet  
 This Cmdlet can be launched from:  
@@ -67,3 +69,6 @@ For any parameter that is not defined when triggering the Cmdlet, prompts will s
 1. If the list of existing VMs with the same Prefix name have out of order index numbers, this script will fail.  
         
     i.e.: if your chosen Prefix name is "TestVM" and there is "TestVM-1" and "TestVM-3" in your resource group, this script will count the 2 VMs and use 3 as the next index number, resulting in an attempt to create a VM named "TestVM-3", and failing.
+
+## Examples
+    ./New-IcoAzVM.ps1 -SubscriptionName MySubscription -ResourceGroupName MyResourceGrp -Location eastus -VMCount 2 -VMSize B4ms -UseSSD N -VMPrefix IcoVM -ICONICSversion 10.96.2 -Username iconicsadmin -AllowHTTP Y -AllowFWX Y
