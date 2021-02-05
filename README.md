@@ -47,21 +47,21 @@ This Cmdlet can be launched from:
 
 Once in the directory where this Cmdlet is saved, invoke it by typing: **./New-IcoAzVM.ps1**  
 
-Optionally, parameters can be passed in as part of invocation with the following names:
-- SubscriptionName
-- ResourceGroupName
-- Location
-- VMCount
-- VMSize
-- UseSSD
-- VMPrefix
-- ICONICSversion
-- Username
-- Password
-- AllowHTTP
-- AllowFWX
+Optionally, parameters can be passed in with the following parameter names:
+- **SubscriptionName**
+- **ResourceGroupName**
+- **Location** *(eastus,westeurope,...)*
+- **VMCount** *(1,2,3,...)*
+- **VMSize** *(B2s, B2ms, D3_v2,...)*
+- **UseSSD** *(Y/N)*
+- **VMPrefix**
+- **ICONICSversion** *(10.96.1, 10.96.2)*
+- **Username**
+- **Password** *(min. 12 characters, one upper, one lower, one number, one symbol)*
+- **AllowHTTP** *(Y/N)*
+- **AllowFWX** *(Y/N)*
 
-For any parameter that is not defined during invocation, prompts will show up to guide you through the rest.  
+For any parameter that is not defined when triggering the Cmdlet, prompts will show up to guide you through the rest.  
 
 ## Known issues  
 1. If the list of existing VMs with the same Prefix name have out of order index numbers, this script will fail.  
