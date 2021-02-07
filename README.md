@@ -20,7 +20,7 @@ Before running this Cmdlet, ensure you have the following information:
     - If an existing Resource Group is re-used, then the Azure region of the Resource Group will be applied.  
     - List of Azure regions can be found here: https://azure.microsoft.com/en-us/global-infrastructure/geographies/
     - Enter Azure regions in lowercase and without spaces
-- **Number of VMs** to generate.  
+- **Number of VMs** to provision.  
 - **Azure VM Size name**
 - **SSD option**
     - If SSD option is chosen, VMs will use Premium SSD for its OS disk. Otherwise, Standard HDD is used.
@@ -40,7 +40,7 @@ Before running this Cmdlet, ensure you have the following information:
     - **HTTP** inbound using TCP port 80  
     - **ICONICS FrameWorX** inbound using TCP port 8778  
     
-    *Note that this only opens the ports at the Azure NSG level. The respective ports still need to be allowed in the VM's Windows Firewall.*
+    *Note that this only opens the ports at the Azure NSG level. The respective ports still need to be allowed in the VM's Windows Firewall.*  
 
 ## Using the Cmdlet  
 This Cmdlet can be launched from:  

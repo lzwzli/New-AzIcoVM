@@ -5,11 +5,11 @@
 # VMs can be created in any region that is supported by your subscription.
 #
 # Author: Zhi Wei Li
-# Dev Version: 5.2
-# Publish date: Feb 6th, 2021
+# Dev Version: 5.7
+# Publish date: Feb 7th, 2021
 # 
-# Release Version: 1.4.0
-# Release date: Feb 6th, 2021
+# Release Version: 1.5.0
+# Release date: Feb 7th, 2021
 #
 #=============================================================================================================================
 
@@ -41,13 +41,22 @@ param (
     [Parameter(Mandatory=$false)]
     [String]$AllowFWX,
     [Parameter(Mandatory=$false)]
-    [String]$Confirm
+    [String]$Confirm,
+    [Parameter(Mandatory=$false)]
+    [String]$AsJob
 )
 
 #Wait job function
 function WaitJob {
-    #Get job state
-    $jobState=Get-Job | Select-Object -Property State
+    param ([Parameter(Mandatory=$false)][string]$Command)
+    IF(!$Command){
+        #Get job state
+        $jobState=Get-Job | Select-Object -Property State
+    }
+    ELSE{
+        #Get job state
+        $jobState=Get-Job -Command ('*'+$Command+'*') | Select-Object -Property State
+    }
 
     #Initialize animation
     $cursorTop = [Console]::CursorTop
@@ -65,7 +74,14 @@ function WaitJob {
         $counter+=1
         Start-Sleep -milliseconds 125
 
-        $jobState=Get-Job | Select-Object -Property State
+        IF(!$Command){
+            #Get job state
+            $jobState=Get-Job | Select-Object -Property State
+        }
+        ELSE{
+            #Get job state
+            $jobState=Get-Job -Command ('*'+$Command+'*') | Select-Object -Property State
+        }
     }
 
     #Reset console
@@ -421,6 +437,7 @@ IF($SubscriptionName){
     #Change subscription
     Set-AzContext -SubscriptionName $SubscriptionName
     $AzContext=Get-AzContext
+    $owner=($AzContext.Account).Id
 }
 #Subscription no set from input parameter
 ELSE {
@@ -897,31 +914,32 @@ ELSE {
 #=======================================================================================================================
 # Confirmation
 #=======================================================================================================================
-#Confirm to proceed
-PrintStatus 'Confirm VM creation parameters:'
+IF(!$Confirm -or $Confirm -ne 'Y'){
+    #Confirm to proceed
+    PrintStatus 'Confirm VM creation parameters:'
 
-PrintConfirmationEntry 'Subscription:' $AzContext.Subscription.Name
-PrintConfirmationEntry 'Resource group name:' $resourceGroupName
-PrintConfirmationEntry 'Azure region:' $location
-PrintConfirmationEntry 'Number of VMs:' $numberVMs
-PrintConfirmationEntry 'VM size:' $vmSize
-PrintConfirmationEntry 'SSD:' (PrintYESNO($SSD))
-PrintConfirmationEntry 'VM prefix name:' $vmName
-PrintConfirmationEntry 'ICONICS version:' $ICONICSversion
-PrintConfirmationEntry 'Username:' $username
+    PrintConfirmationEntry 'Subscription:' $AzContext.Subscription.Name
+    PrintConfirmationEntry 'Resource group name:' $resourceGroupName
+    PrintConfirmationEntry 'Azure region:' $location
+    PrintConfirmationEntry 'Number of VMs:' $numberVMs
+    PrintConfirmationEntry 'VM size:' $vmSize
+    PrintConfirmationEntry 'SSD:' (PrintYESNO($SSD))
+    PrintConfirmationEntry 'VM prefix name:' $vmName
+    PrintConfirmationEntry 'ICONICS version:' $ICONICSversion
+    PrintConfirmationEntry 'Username:' $username
 
-IF($vnetExist -eq $false){
-    PrintConfirmationEntry 'Allow HTTP Inbound:' (PrintYESNO($AllowHTTP))
-    PrintConfirmationEntry 'Allow FWX Inbound:' (PrintYESNO($AllowFWX))
-}
+    IF($vnetExist -eq $false){
+        PrintConfirmationEntry 'Allow HTTP Inbound:' (PrintYESNO($AllowHTTP))
+        PrintConfirmationEntry 'Allow FWX Inbound:' (PrintYESNO($AllowFWX))
+    }
 
-write-host ('='*200)
-write-host ' '
+    write-host ('='*200)
+    write-host ' '
 
 #=======================================================================================================================
 # Confirm creation
 #=======================================================================================================================
-IF(!$Confirm -or $Confirm -ne 'Y'){
+
     $confirmCreation=ConfirmCreate
 }
 ELSE{
@@ -1059,7 +1077,7 @@ ELSE {
         New-AzPublicIpAddress -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-ip') -ResourceGroupName $resourceGroupName -Location $location -AllocationMethod $ipSetup -DomainNameLabel ($resourceGroupName.ToLower()+'-'+$VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString()) -AsJob
     }
 
-    WaitJob
+    WaitJob 'New-AzPublicIpAddress'
 
     #=======================================================================================================================
     # Get Public IPs
@@ -1072,15 +1090,13 @@ ELSE {
     #=======================================================================================================================
     # Create NICs
     #=======================================================================================================================
-    PrintStatus ('Wait '+$NICCreateDuration+' seconds for NIC creation')  
-
     $nics = @()
     For($i=0; $i -lt $numberVMs; $i++){
         PrintStatus ('Creating NIC: '+($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-nic'))
         New-AzNetworkInterface -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-nic') -ResourceGroupName $resourceGroupName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $publicIps[$i].Id -AsJob
     }
 
-    WaitJob
+    WaitJob 'New-AzNetworkInterface'
 
     #=======================================================================================================================
     # Get NICs
@@ -1116,37 +1132,34 @@ ELSE {
 
     #=======================================================================================================================
     # Create VM
-    #=======================================================================================================================
-    PrintStatus ('Wait at least 1 minute for each VM''s creation')
-    
+    #=======================================================================================================================    
     $VMDNS=@()
     For($i=0; $i -lt $numberVMs; $i++){
         PrintStatus ('Creating VM: '+($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()))
         Get-AzMarketplaceTerms -Publisher 'iconics' -Product $iconicsSKU -Name $iconicsSKU | Set-AzMarketplaceTerms -Accept
         New-AzVm -ResourceGroupName $resourceGroupName -Location $location -VM $VirtualMachines[$i] -Tag @{'Owner'=$owner;'ICONICS Version'=$ICONICSversionTag} -AsJob
 
-        #Wait 10 seconds before adding DNS
-        Start-Sleep -s 10
-
         $VMDNS += ($publicIps[$i].dnssettings).Fqdn
         
         PrintStatus ('VM is still being created. Wait for final complete message before attempting to access VM.')
     }
 
-    WaitJob
+    IF(!$AsJob -or $AsJob -ne 'Y'){
+        WaitJob 'New-AzVm'
 
-    #=======================================================================================================================
-    # Create Complete
-    #=======================================================================================================================
-    Write-Host ('='*200)
-    write-host 'VM Creation Complete.'
-    Write-Host ('-'*200)
+        #=======================================================================================================================
+        # Create Complete
+        #=======================================================================================================================
+        Write-Host ('='*200)
+        write-host 'VM Creation Complete.'
+        Write-Host ('-'*200)
 
-    PrintConfirmationEntry 'Username:' $username
-    Write-Host ('-'*200)
-    write-host 'VM DNS Addresses:'
-    For($i=0;$i -lt $numberVMs; $i++){
-        PrintConfirmationEntry ($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()+':') $VMDNS[$i]
+        PrintConfirmationEntry 'Username:' $username
+        Write-Host ('-'*200)
+        write-host 'VM DNS Addresses:'
+        For($i=0;$i -lt $numberVMs; $i++){
+            PrintConfirmationEntry ($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()+':') $VMDNS[$i]
+        }
+        Write-Host ('='*200)
     }
-    Write-Host ('='*200)
 }
