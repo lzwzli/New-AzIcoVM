@@ -62,6 +62,8 @@ Optionally, parameters can be passed in with the following parameter names:
 - **Password** *(min. 12 characters, one upper, one lower, one number, one symbol)*
 - **AllowHTTP** *(Y/N)*
 - **AllowFWX** *(Y/N)*
+- **Confirm** *(Y/N)*  
+    *This parameter instructs the cmdlet to create the resources without requiring additional confirmation*
 
 For any parameter that is not defined when triggering the Cmdlet, prompts will show up to guide you through the rest.  
 

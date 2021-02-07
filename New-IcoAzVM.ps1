@@ -5,11 +5,11 @@
 # VMs can be created in any region that is supported by your subscription.
 #
 # Author: Zhi Wei Li
-# Dev Version: 5.0
-# Publish date: Feb 4th, 2021
+# Dev Version: 5.2
+# Publish date: Feb 6th, 2021
 # 
-# Release Version: 1.3.0
-# Release date: Feb 5th, 2021
+# Release Version: 1.4.0
+# Release date: Feb 6th, 2021
 #
 #=============================================================================================================================
 
@@ -39,7 +39,9 @@ param (
     [Parameter(Mandatory=$false)]
     [String]$AllowHTTP,
     [Parameter(Mandatory=$false)]
-    [String]$AllowFWX
+    [String]$AllowFWX,
+    [Parameter(Mandatory=$false)]
+    [String]$Confirm
 )
 
 #Wait job function
@@ -389,6 +391,7 @@ function ConfirmCreate {
     return $confirmCreation
 }
 
+IF(-NOT($Confirm -eq 'Y')){
 #=======================================================================================================================
 # Main Script
 #=======================================================================================================================
@@ -407,7 +410,7 @@ write-host ('Your Az module version is: '+(get-installedmodule -name Az).Version
 Write-Host ' '
 write-host ' '
 write-host ('='*200)
-
+}
 #=======================================================================================================================
 # Subscription
 #=======================================================================================================================
@@ -438,7 +441,7 @@ ELSE {
 
     #Confirm Subscription
     write-host 'Your current subscription is ' -foregroundcolor green -NoNewline
-    Write-Host $AzContext.Name -ForegroundColor Yellow -NoNewline
+    Write-Host $AzContext.Subscription.Name -ForegroundColor Yellow -NoNewline
     Write-Host ' '
 
     #Ask if user wants to change subscription
@@ -459,16 +462,17 @@ ELSE {
         #Confirm subscription change
         $AzContext = Get-AzContext
         write-host 'Subscription changed to ' -foregroundcolor green -NoNewline
-        write-host $AzContext.Name -ForegroundColor Yellow -NoNewline
+        write-host $AzContext.Subscription.Name -ForegroundColor Yellow -NoNewline
         Write-Host ' '
     }
 
     #Use current subscription
     ELSE {
         write-host 'Using current subscription ' -foregroundcolor green -NoNewline
-        write-host $AzContext.Name -ForegroundColor Yellow -NoNewline
+        write-host $AzContext.Subscription.Name -ForegroundColor Yellow -NoNewline
         Write-Host ' '
     }
+    $SubscriptionName=$AzContext.Subscription.Name
 }
 
 #=======================================================================================================================
@@ -688,82 +692,40 @@ ELSE{
 IF(!$VMPrefix){
     #Get VM prefix
     write-host ('='*200) -ForegroundColor Green
-    [bool]$renameVMname=$true
-
-    #Ask user to give VM prefix name while $renameVMname is TRUE
-    while($renameVMname -eq $true){
-        #Initial Get VM Name
-        $vmName=GetVMName
-            
-        #Existing resource group. Check if there are resources with user given prefix.
-        IF($checkVMexist -eq $true){
-            Write-Host '~~ Checking for VMs with the same prefix ~~' -ForegroundColor Yellow -NoNewline
-            Write-Host ' '
-            $VMs=Get-AzResource -ResourceGroupName $resourceGroupName -ResourceType 'Microsoft.Compute/virtualMachines' -Name ($vmName+'*') 
-
-            #There are resources containing user given prefix.
-            IF($VMs){
-                #Get VM count to increment index later
-                $VMCount=$VMs.count
-                write-host 'Found ' -NoNewline
-                write-host $VMCount -ForegroundColor Yellow -NoNewline
-                write-host ' VM(s) with ' -NoNewline
-                write-host $vmName -foregroundcolor Yellow -NoNewline
-                write-host ' prefix.'
-                            
-                #Continue
-                $renameVMname = $false
-            } 
-            #No existing resources in exisitng resource group as user given prefix. OK to continue
-            ELSE {
-                #Continue
-                $VMCount=0
-                $renameVMname = $false
-            }
-        } 
-        ELSE {
-            #Continue
-            $VMCount=0
-            $checkVMexist=$false
-            $renameVMname=$false
-        }
-    }
+    
+    #Initial Get VM Name
+    $vmName=GetVMName
 }
 #VM prefix provided by parameter
 ELSE{
     $vmName=$VMPrefix
-    #Existing resource group. Check if there are resources with user given prefix.
-    IF($checkVMexist -eq $true){
-        Write-Host '~~ Checking for VMs with the same prefix ~~' -ForegroundColor Yellow -NoNewline
-        Write-Host ' '
-        $VMs=Get-AzResource -ResourceGroupName $resourceGroupName -ResourceType 'Microsoft.Compute/virtualMachines' -Name ($vmName+'*') 
+}
 
-        #There are resources containing user given prefix.
-        IF($VMs){
-            #Get VM count to increment index later
-            $VMCount=$VMs.count
-            write-host 'Found ' -NoNewline
-            write-host $VMCount -ForegroundColor Yellow -NoNewline
-            write-host ' VM(s) with ' -NoNewline
-            write-host $vmName -foregroundcolor Yellow -NoNewline
-            write-host ' prefix.'
-                        
-            #Continue
-            $renameVMname = $false
-        } 
-        #No existing resources in exisitng resource group as user given prefix. OK to continue
-        ELSE {
-            #Continue
-            $VMCount=0
-            $renameVMname = $false
-        }
+#Existing resource group. Check if there are resources with user given prefix.
+IF($checkVMexist -eq $true){
+    Write-Host '~~ Checking for VMs with the same prefix ~~' -ForegroundColor Yellow -NoNewline
+    Write-Host ' '
+    $VMs=Get-AzResource -ResourceGroupName $resourceGroupName -ResourceType 'Microsoft.Compute/virtualMachines' -Name ($vmName+'*') 
+    #There are resources containing user given prefix.
+    IF($VMs){
+        #Get VM count to increment index later
+        $VMsCount=$VMs.count
+        write-host 'Found ' -NoNewline
+        write-host $VMsCount -ForegroundColor Yellow -NoNewline
+        write-host ' VM(s) with ' -NoNewline
+        write-host $vmName -foregroundcolor Yellow -NoNewline
+        write-host ' prefix.'
     } 
+    #No existing resources in exisitng resource group as user given prefix. OK to continue
     ELSE {
         #Continue
-        $VMCount=0
-        $checkVMexist=$false
-        $renameVMname=$false
+        $VMsCount=0
     }
+} 
+ELSE {
+    #Continue
+    $VMsCount=0
+    $checkVMexist=$false
 }
 
 #=======================================================================================================================
@@ -938,7 +900,7 @@ ELSE {
 #Confirm to proceed
 PrintStatus 'Confirm VM creation parameters:'
 
-PrintConfirmationEntry 'Subscription:' $AzContext.Name
+PrintConfirmationEntry 'Subscription:' $AzContext.Subscription.Name
 PrintConfirmationEntry 'Resource group name:' $resourceGroupName
 PrintConfirmationEntry 'Azure region:' $location
 PrintConfirmationEntry 'Number of VMs:' $numberVMs
@@ -959,7 +921,12 @@ write-host ' '
 #=======================================================================================================================
 # Confirm creation
 #=======================================================================================================================
-$confirmCreation=ConfirmCreate
+IF(!$Confirm -or $Confirm -ne 'Y'){
+    $confirmCreation=ConfirmCreate
+}
+ELSE{
+    $confirmCreation=$Confirm
+}
 
 #Exit if $confirmCreateion is N
 IF($confirmCreation -eq 'N'){
@@ -1080,16 +1047,16 @@ ELSE {
     #=======================================================================================================================
     $VirtualMachines = @()
     For($i=0; $i -lt $numberVMs; $i++){
-        PrintStatus ('Creating VM Object: '+($virtualMachineName + '-' + ($i+1+$VMCount).ToString()))       
-        $VirtualMachines += New-AzVMConfig -VMName ($virtualMachineName + '-' + ($i+1+$VMCount).ToString()) -VMSize $virtualMachineSize
+        PrintStatus ('Creating VM Object: '+($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()))       
+        $VirtualMachines += New-AzVMConfig -VMName ($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()) -VMSize $virtualMachineSize
     }
 
     #=======================================================================================================================
     # Create Public IPs
     #=======================================================================================================================
     For($i=0; $i -lt $numberVMs; $i++){
-        PrintStatus ('Creating IP: '+($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-ip'))
-        New-AzPublicIpAddress -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-ip') -ResourceGroupName $resourceGroupName -Location $location -AllocationMethod $ipSetup -DomainNameLabel ($resourceGroupName.ToLower()+'-'+$VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString()) -AsJob
+        PrintStatus ('Creating IP: '+($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-ip'))
+        New-AzPublicIpAddress -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-ip') -ResourceGroupName $resourceGroupName -Location $location -AllocationMethod $ipSetup -DomainNameLabel ($resourceGroupName.ToLower()+'-'+$VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString()) -AsJob
     }
 
     WaitJob
@@ -1099,7 +1066,7 @@ ELSE {
     #=======================================================================================================================
     $publicIps = @()
     For($i=0; $i -lt $numberVMs; $i++){
-        $publicIps += Get-AzPublicIpAddress -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-ip') -ResourceGroupName $resourceGroupName
+        $publicIps += Get-AzPublicIpAddress -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-ip') -ResourceGroupName $resourceGroupName
     }
     
     #=======================================================================================================================
@@ -1109,8 +1076,8 @@ ELSE {
 
     $nics = @()
     For($i=0; $i -lt $numberVMs; $i++){
-        PrintStatus ('Creating NIC: '+($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-nic'))
-        New-AzNetworkInterface -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-nic') -ResourceGroupName $resourceGroupName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $publicIps[$i].Id -AsJob
+        PrintStatus ('Creating NIC: '+($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-nic'))
+        New-AzNetworkInterface -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-nic') -ResourceGroupName $resourceGroupName -Location $location -SubnetId $vnet.Subnets[0].Id -PublicIpAddressId $publicIps[$i].Id -AsJob
     }
 
     WaitJob
@@ -1119,7 +1086,7 @@ ELSE {
     # Get NICs
     #=======================================================================================================================
     For($i=0; $i -lt $numberVMs; $i++){
-        $nics += Get-AzNetworkInterface -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMCount).ToString() + '-nic') -ResourceGroupName $resourceGroupName
+        $nics += Get-AzNetworkInterface -Name ($VirtualMachineName.ToLower() + '-' + ($i+1+$VMsCount).ToString() + '-nic') -ResourceGroupName $resourceGroupName
     }
 
     #=======================================================================================================================
@@ -1127,7 +1094,7 @@ ELSE {
     #=======================================================================================================================
     For ($i=0; $i -lt $numberVMs; $i++){
         #Set OS Type and Credentials
-        $VirtualMachines[$i] = Set-AzVMOperatingSystem -VM $VirtualMachines[$i] -Windows -ComputerName ($virtualMachineName + '-' + ($i+1+$VMCount).ToString()) -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
+        $VirtualMachines[$i] = Set-AzVMOperatingSystem -VM $VirtualMachines[$i] -Windows -ComputerName ($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()) -Credential $cred -ProvisionVMAgent -EnableAutoUpdate
         
         #Use HDD if SSD option is N
         If ($SSD -eq 'N'){
@@ -1154,7 +1121,7 @@ ELSE {
     
     $VMDNS=@()
     For($i=0; $i -lt $numberVMs; $i++){
-        PrintStatus ('Creating VM: '+($virtualMachineName + '-' + ($i+1+$VMCount).ToString()))
+        PrintStatus ('Creating VM: '+($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()))
         Get-AzMarketplaceTerms -Publisher 'iconics' -Product $iconicsSKU -Name $iconicsSKU | Set-AzMarketplaceTerms -Accept
         New-AzVm -ResourceGroupName $resourceGroupName -Location $location -VM $VirtualMachines[$i] -Tag @{'Owner'=$owner;'ICONICS Version'=$ICONICSversionTag} -AsJob
 
@@ -1179,7 +1146,7 @@ ELSE {
     Write-Host ('-'*200)
     write-host 'VM DNS Addresses:'
     For($i=0;$i -lt $numberVMs; $i++){
-        PrintConfirmationEntry ($virtualMachineName + '-' + ($i+1+$VMCount).ToString()+':') $VMDNS[$i]
+        PrintConfirmationEntry ($virtualMachineName + '-' + ($i+1+$VMsCount).ToString()+':') $VMDNS[$i]
     }
     Write-Host ('='*200)
 }
