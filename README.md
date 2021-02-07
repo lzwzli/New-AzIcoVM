@@ -78,7 +78,7 @@ The example above would prompt for the *iconicsadmin* password and then create t
 1. Set the subscription to *MySubscription*
 1. Create *MyResourceGrp* in the *eastus* region if it doesn't exist, otherwise use the existing resource group
 1. If a new resource group is created, also create the network components like subnet, VNet and NSG. The NSG will have *HTTP (TCP port 80)* and *FrameWorX (TCP port 8778)* allowed for inbound.
-1. Create 2 ICONICS Suite *10.96.2* VMs with the *B4ms* size using *Standrd HDD* OS disk.
+1. Create 2 ICONICS Suite *10.96.2* VMs with the *B4ms* size using *Standard HDD* OS disk.
 1. If a new resource group is created, VM name will be *IcoVM-1* and *IcoVM-2*.  
         
     If resource group already exist and there is already a VM with prefix of *IcoVM*, then the VM name will be *IcoVM-2* and *IcoVM-3*.  
