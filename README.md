@@ -1,6 +1,6 @@
 # New-IcoAzVM
 ## Introduction  
-This Cmdlet creates one or more virtual machines (VM) based on the ICONICS Suite offers on Azure Marketplace. Supported ICONICS Suite versions include **10.96.1** and **10.96.2**.  
+This Cmdlet creates one or more virtual machines (VM) based on the ICONICS Suite offers on Azure Marketplace. Supported ICONICS Suite versions include **10.96.1**, **10.96.2** and **10.97**.  
 
 This Cmdlet can be invoked with and without parameters. If no or insufficient parameters are provided when the Cmdlet is called, it will ask you a series of questions to guide you through the process.  
 
@@ -57,7 +57,7 @@ Optionally, parameters can be passed in with the following parameter names:
 - **VMSize** *(B2s, B2ms, D3_v2,...)*
 - **UseSSD** *(Y/N)*
 - **VMPrefix**
-- **ICONICSversion** *(10.96.1, 10.96.2)*
+- **ICONICSversion** *(10.96.1, 10.96.2, 10.97)*
 - **Username**
 - **Password** *(min. 12 characters, one upper, one lower, one number, one symbol)*
 - **AllowHTTP** *(Y/N)*
@@ -73,12 +73,12 @@ For any parameter that is not defined when triggering the Cmdlet, prompts will s
     i.e.: if your chosen Prefix name is "TestVM" and there is "TestVM-1" and "TestVM-3" in your resource group, this script will count the 2 VMs and use 3 as the next index number, resulting in an attempt to create a VM named "TestVM-3", and failing.
 
 ## Examples
-    ./New-IcoAzVM.ps1 -SubscriptionName MySubscription -ResourceGroupName MyResourceGrp -Location eastus -VMCount 2 -VMSize B4ms -UseSSD N -VMPrefix IcoVM -ICONICSversion 10.96.2 -Username iconicsadmin -AllowHTTP Y -AllowFWX Y
+    ./New-IcoAzVM.ps1 -SubscriptionName MySubscription -ResourceGroupName MyResourceGrp -Location eastus -VMCount 2 -VMSize B4ms -UseSSD N -VMPrefix IcoVM -ICONICSversion 10.97 -Username iconicsadmin -AllowHTTP Y -AllowFWX Y
 The example above would prompt for the *iconicsadmin* password and then create the following:
 1. Set the subscription to *MySubscription*
 1. Create *MyResourceGrp* in the *eastus* region if it doesn't exist, otherwise use the existing resource group
 1. If a new resource group is created, also create the network components like subnet, VNet and NSG. The NSG will have *HTTP (TCP port 80)* and *FrameWorX (TCP port 8778)* allowed for inbound.
-1. Create 2 ICONICS Suite *10.96.2* VMs with the *B4ms* size using *Standard HDD* OS disk.
+1. Create 2 ICONICS Suite *10.97* VMs with the *B4ms* size using *Standard HDD* OS disk.
 1. If a new resource group is created, VM name will be *IcoVM-1* and *IcoVM-2*.  
         
     If resource group already exist and there is already a VM with prefix of *IcoVM*, then the VM name will be *IcoVM-2* and *IcoVM-3*.  
