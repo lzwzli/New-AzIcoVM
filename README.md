@@ -6,6 +6,8 @@ This Cmdlet can be invoked with and without parameters. If no or insufficient pa
 
 The Cmdlet will guide you through the process with a series of questions to collect the necessary parameter values as outlined in the pre-requisites. It will then allow you to confirm the collected values before you commit to creating the necessary resources.  
 
+When you deploy ICONICS software, Microsoft can identify the installation of ICONICS software with the deployed Azure resources. Microsoft can correlate these resources used to support the software. Microsoft collects this information to provide the best experiences with their products and to operate their business. The data is collected and governed by Microsoft's privacy policies, located at https://www.microsoft.com/trustcenter.  
+
 This Cmdlet will create the following resources as necessary:  
 - Resource Group  
 - Network resources (IP, subnet, NSG, NIC, VNet)  
